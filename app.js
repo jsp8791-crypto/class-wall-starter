@@ -147,6 +147,58 @@ input.addEventListener("keydown", function (e) {
 });
 
 
+// ===================================================
+// AI 교사 코멘트 기능 (Vercel 서버리스 함수 /api/gemini 호출)
+// ===================================================
+
+const aiBtn = document.getElementById("aiBtn");
+const aiCommentBox = document.getElementById("aiCommentBox");
+const aiCommentText = document.getElementById("aiCommentText");
+
+if (aiBtn) {
+  aiBtn.addEventListener("click", async function () {
+    const currentMemos = loadMemos();
+
+    if (currentMemos.length === 0) {
+      alert("담벼락에 메모가 최소 1개 이상 있어야 AI 코멘트를 작성할 수 있습니다.");
+      return;
+    }
+
+    // 학생 개인정보(이름, ID 등)를 제외하고 오직 메모 텍스트 내용만 추출
+    const memoTexts = currentMemos.map(function (m) {
+      return m.text;
+    });
+
+    aiBtn.disabled = true;
+    aiBtn.textContent = "🤖 AI가 메모를 읽고 코멘트를 작성 중입니다...";
+    aiCommentBox.style.display = "block";
+    aiCommentText.textContent = "잠시만 기다려 주세요. 담임 선생님의 코멘트를 정리하고 있습니다...";
+
+    try {
+      const res = await fetch("/api/gemini", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memos: memoTexts })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "코멘트 생성에 실패했습니다.");
+      }
+
+      aiCommentText.textContent = data.comment;
+    } catch (err) {
+      console.error("AI 코멘트 요청 오류:", err);
+      aiCommentText.textContent = "⚠️ " + err.message + "\n(Vercel 프로젝트 환경변수에 GEMINI_API_KEY를 등록했는지 확인해 주세요)";
+    } finally {
+      aiBtn.disabled = false;
+      aiBtn.textContent = "🤖 AI 교사 코멘트 다시 받기";
+    }
+  });
+}
+
+
 // 첫 화면 그리기 및 포커스
 render();
 input.focus();
