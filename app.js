@@ -44,8 +44,13 @@ function loadMemos() {
   });
 }
 
-// 메모를 새로 씁니다.
+// 메모를 새로 씁니다. (5글자 이상만 저장)
 async function addMemo(text) {
+  if (text.length < 5) {
+    alert("메모는 5글자 이상 입력해 주세요.");
+    return;
+  }
+
   const newMemo = {
     text: text,
     createdAt: Date.now()
